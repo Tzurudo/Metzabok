@@ -1,0 +1,16 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_declare_return_types
+    - cancel_subscriptions
+    - close_sinks
+    - comment_references
+    - library_private_types_in_public_api
+    - no_duplicate_case_values
+    - prefer_const_constructors
+    - prefer_final_locals
+    - sort_child_properties_last
+    - unawaited_futures
+    - unsafe_html
+    - use_key_in_widget_constructors
