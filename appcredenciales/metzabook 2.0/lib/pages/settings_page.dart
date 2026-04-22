@@ -189,6 +189,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _connectToDevice(Device device) async {
     await _stopScan();
+    if (!mounted) return;
+
     unawaited(
       showDialog(
         context: context,
@@ -212,16 +214,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
     try {
       await _btManager.connect(device.address, device.name ?? "Unknown");
-      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-      if (mounted) setState(() => isConnecting = false);
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      setState(() => isConnecting = false);
     } catch (e) {
-      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-      if (mounted) {
-        setState(() => isConnecting = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error al conectar: $e")));
-      }
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      setState(() => isConnecting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error al conectar: $e")));
     }
   }
 

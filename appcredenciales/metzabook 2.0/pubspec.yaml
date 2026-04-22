@@ -24,10 +24,7 @@ dependencies:
   another_telephony: ^0.4.1
   bluetooth_classic: ^0.0.4
   nsd: ^4.1.0
-<<<<<<< HEAD
-=======
   web_socket_channel: ^2.4.0
->>>>>>> 5c92128 (Initial commit)
 
 
 dev_dependencies:
@@ -43,8 +40,4 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-<<<<<<< HEAD
   image_path: "assets/metzabook.png"
-=======
-  image_path: "assets/metzabok.png"
->>>>>>> 5c92128 (Initial commit)

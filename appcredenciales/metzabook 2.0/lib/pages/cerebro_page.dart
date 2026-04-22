@@ -146,7 +146,7 @@ class _CerebroPageState extends State<CerebroPage> {
           },
         );
 
-        if (shouldPop == true && mounted) {
+        if (shouldPop == true && context.mounted) {
           setState(() => _canPop = true);
           Navigator.of(context).pop();
         }
