@@ -45,7 +45,7 @@ class _WifiPageState extends State<WifiPage> {
   String foco4Label = 'Interruptor 4';
 
   // Manejo de foco para teclado/control remoto
-  List<FocusNode> focusNodes = List.generate(4, (_) => FocusNode());
+  final List<FocusNode> focusNodes = List.generate(4, (_) => FocusNode());
   int currentFocus = 0;
   late FocusNode _keyboardFocusNode;
 
@@ -72,7 +72,8 @@ class _WifiPageState extends State<WifiPage> {
         foco4Label = prefs.getString('foco4_label') ?? 'Interruptor 4';
 
         // Cargamos la IP guardada en Settings
-        String savedIp = prefs.getString('metzabok_ip') ?? 'metzabok.local';
+        final String savedIp =
+            prefs.getString('metzabok_ip') ?? 'metzabok.local';
         if (!savedIp.startsWith('http')) {
           baseUrl = "http://$savedIp";
         } else {
@@ -86,8 +87,8 @@ class _WifiPageState extends State<WifiPage> {
   void _initBusqueda() {
     _probarConexion().then((conectado) {
       if (mounted && !conectado) {
-        _intentarResolucionDirecta();
-        _buscarDispositivoMDNS();
+        unawaited(_intentarResolucionDirecta());
+        unawaited(_buscarDispositivoMDNS());
       }
     });
   }
@@ -96,18 +97,18 @@ class _WifiPageState extends State<WifiPage> {
   Future<void> _intentarResolucionDirecta() async {
     debugPrint("Direct -> Intentando resolución directa de metzabok.local...");
     try {
-      final results = await InternetAddress.lookup(
+      final List<InternetAddress> results = await InternetAddress.lookup(
         'metzabok.local',
       ).timeout(const Duration(seconds: 2));
 
       if (results.isNotEmpty) {
-        String foundIp = results.first.address;
+        final String foundIp = results.first.address;
         debugPrint("Direct -> ¡Resolución exitosa! IP: $foundIp");
         if (mounted && !_estaConectado) {
           setState(() {
             baseUrl = "http://$foundIp";
           });
-          _probarConexion();
+          unawaited(_probarConexion());
         }
       }
     } catch (e) {
@@ -137,7 +138,7 @@ class _WifiPageState extends State<WifiPage> {
               setState(() {
                 _primerApagadoRealizado = true;
               });
-              _sendAllOffSequentially();
+              unawaited(_sendAllOffSequentially());
             } else {
               // Marcamos como realizado para no intentar de nuevo, pero no apagamos nada.
               setState(() {
@@ -161,7 +162,7 @@ class _WifiPageState extends State<WifiPage> {
     if (mounted && !_estaConectado && !_buscando) {
       _reconnectTimer = Timer(const Duration(seconds: 5), () {
         if (mounted && !_estaConectado && !_buscando) {
-          _probarConexion();
+          unawaited(_probarConexion());
         }
       });
     }
@@ -175,7 +176,8 @@ class _WifiPageState extends State<WifiPage> {
 
     // Solicitar permisos necesarios en Android para descubrimiento de red
     if (Platform.isAndroid) {
-      var status = await Permission.locationWhenInUse.request();
+      final PermissionStatus status = await Permission.locationWhenInUse
+          .request();
       if (status != PermissionStatus.granted) {
         debugPrint("mDNS -> Permiso de ubicación denegado");
         if (mounted) {
@@ -205,7 +207,7 @@ class _WifiPageState extends State<WifiPage> {
         debugPrint('mDNS -> Detectado: ${service.name} ($status)');
 
         // Criterio de búsqueda: nombre o host contienen "metza"
-        bool coincide =
+        final bool coincide =
             (service.name?.toLowerCase().contains('metza') == true) ||
             (service.host?.toLowerCase().contains('metza') == true);
 
@@ -223,10 +225,11 @@ class _WifiPageState extends State<WifiPage> {
               setState(() {
                 baseUrl = "http://$foundAddr";
               });
-              if (_discoveryObject != null)
-                nsd.stopDiscovery(_discoveryObject!);
+              if (_discoveryObject != null) {
+                unawaited(nsd.stopDiscovery(_discoveryObject!));
+              }
               _discoveryObject = null;
-              _probarConexion();
+              unawaited(_probarConexion());
             }
           }
         }
@@ -236,7 +239,9 @@ class _WifiPageState extends State<WifiPage> {
       _scanTimeoutTimer?.cancel();
       _scanTimeoutTimer = Timer(const Duration(seconds: 15), () {
         if (_buscando && mounted) {
-          if (_discoveryObject != null) nsd.stopDiscovery(_discoveryObject!);
+          if (_discoveryObject != null) {
+            unawaited(nsd.stopDiscovery(_discoveryObject!));
+          }
           _discoveryObject = null;
           setState(() => _buscando = false);
           debugPrint("mDNS -> Búsqueda finalizada por tiempo");
@@ -275,16 +280,16 @@ class _WifiPageState extends State<WifiPage> {
     setState(() {
       if (currentFocus == 0) {
         foco1 = !foco1;
-        enviar(foco1 ? "/foco1/on" : "/foco1/off");
+        unawaited(enviar(foco1 ? "/foco1/on" : "/foco1/off"));
       } else if (currentFocus == 1) {
         foco2 = !foco2;
-        enviar(foco2 ? "/foco2/on" : "/foco2/off");
+        unawaited(enviar(foco2 ? "/foco2/on" : "/foco2/off"));
       } else if (currentFocus == 2) {
         foco3 = !foco3;
-        enviar(foco3 ? "/foco3/on" : "/foco3/off");
+        unawaited(enviar(foco3 ? "/foco3/on" : "/foco3/off"));
       } else if (currentFocus == 3) {
         foco4 = !foco4;
-        enviar(foco4 ? "/foco4/on" : "/foco4/off");
+        unawaited(enviar(foco4 ? "/foco4/on" : "/foco4/off"));
       }
     });
   }
@@ -340,9 +345,13 @@ class _WifiPageState extends State<WifiPage> {
   void dispose() {
     _reconnectTimer?.cancel();
     _scanTimeoutTimer?.cancel();
-    if (_discoveryObject != null) nsd.stopDiscovery(_discoveryObject!);
+    if (_discoveryObject != null) {
+      unawaited(nsd.stopDiscovery(_discoveryObject!));
+    }
     _httpClient.close();
-    for (var f in focusNodes) f.dispose();
+    for (final f in focusNodes) {
+      f.dispose();
+    }
     _keyboardFocusNode.dispose();
     super.dispose();
   }
@@ -351,7 +360,7 @@ class _WifiPageState extends State<WifiPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: true,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         // Auto-Check: Si NO es Global Auto (es decir, es Manual) y estamos saliendo
         // mandamos apagar todo por seguridad.
         if (!BluetoothManager().isGlobalAuto.value) {
@@ -360,7 +369,7 @@ class _WifiPageState extends State<WifiPage> {
           );
           // No podemos usar await aquí porque el pop ya ocurrió o está ocurriendo.
           // Lanzamos la secuencia "fire and forget" pero asegurando que el cliente no muera inmediatamente.
-          _sendAllOffAndClose();
+          unawaited(_sendAllOffAndClose());
         }
       },
       child: Scaffold(
@@ -475,10 +484,8 @@ class _WifiPageState extends State<WifiPage> {
                     padding: EdgeInsets.only(bottom: 20),
                     child: LinearProgressIndicator(color: Color(0xFFD4AF37)),
                   ),
-
                 _buildStatusBanner(),
                 const SizedBox(height: 16),
-
                 if (!_estaConectado && !_buscando)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
@@ -537,9 +544,6 @@ class _WifiPageState extends State<WifiPage> {
                       ),
                     ),
                   ),
-
-<<<<<<< HEAD
-=======
                 if (_estaConectado)
                   Card(
                     margin: const EdgeInsets.only(bottom: 20),
@@ -586,12 +590,12 @@ class _WifiPageState extends State<WifiPage> {
                           ),
                           Switch(
                             value: BluetoothManager().isGlobalAuto.value,
-                            activeColor: Colors.blue,
+                            activeThumbColor: Colors.blue,
                             inactiveThumbColor: Colors.orange,
-                            trackColor: MaterialStateProperty.resolveWith((
+                            trackColor: WidgetStateProperty.resolveWith((
                               states,
                             ) {
-                              if (states.contains(MaterialState.selected)) {
+                              if (states.contains(WidgetState.selected)) {
                                 return Colors.blue[200];
                               }
                               return Colors.orange[200];
@@ -600,15 +604,15 @@ class _WifiPageState extends State<WifiPage> {
                               setState(() {
                                 BluetoothManager().isGlobalAuto.value = val;
                               });
-                              enviar(val ? "/global/auto" : "/global/manual");
+                              unawaited(
+                                enviar(val ? "/global/auto" : "/global/manual"),
+                              );
                             },
                           ),
                         ],
                       ),
                     ),
                   ),
-
->>>>>>> 5c92128 (Initial commit)
                 _buildFocoSwitch(0, foco1Label, foco1, (v) {
                   if (BluetoothManager().isGlobalAuto.value) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -622,7 +626,7 @@ class _WifiPageState extends State<WifiPage> {
                     return;
                   }
                   setState(() => foco1 = v);
-                  enviar(v ? "/foco1/on" : "/foco1/off");
+                  unawaited(enviar(v ? "/foco1/on" : "/foco1/off"));
                 }),
                 _buildFocoSwitch(1, foco2Label, foco2, (v) {
                   if (BluetoothManager().isGlobalAuto.value) {
@@ -637,7 +641,7 @@ class _WifiPageState extends State<WifiPage> {
                     return;
                   }
                   setState(() => foco2 = v);
-                  enviar(v ? "/foco2/on" : "/foco2/off");
+                  unawaited(enviar(v ? "/foco2/on" : "/foco2/off"));
                 }),
                 _buildFocoSwitch(2, foco3Label, foco3, (v) {
                   if (BluetoothManager().isGlobalAuto.value) {
@@ -652,7 +656,7 @@ class _WifiPageState extends State<WifiPage> {
                     return;
                   }
                   setState(() => foco3 = v);
-                  enviar(v ? "/foco3/on" : "/foco3/off");
+                  unawaited(enviar(v ? "/foco3/on" : "/foco3/off"));
                 }),
                 _buildFocoSwitch(3, foco4Label, foco4, (v) {
                   if (BluetoothManager().isGlobalAuto.value) {
@@ -667,7 +671,7 @@ class _WifiPageState extends State<WifiPage> {
                     return;
                   }
                   setState(() => foco4 = v);
-                  enviar(v ? "/foco4/on" : "/foco4/off");
+                  unawaited(enviar(v ? "/foco4/on" : "/foco4/off"));
                 }),
               ],
             ),
@@ -703,9 +707,9 @@ class _WifiPageState extends State<WifiPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [

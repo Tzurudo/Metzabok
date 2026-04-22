@@ -24,10 +24,12 @@ class _WifiSetupPageState extends State<WifiSetupPage> {
 
   Future<void> _loadWifiCredentials() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _ssidController.text = prefs.getString('wifi_ssid') ?? '';
-      _passwordController.text = prefs.getString('wifi_password') ?? '';
-    });
+    if (mounted) {
+      setState(() {
+        _ssidController.text = prefs.getString('wifi_ssid') ?? '';
+        _passwordController.text = prefs.getString('wifi_password') ?? '';
+      });
+    }
   }
 
   Future<void> _saveWifiCredentials(String ssid, String password) async {
@@ -36,7 +38,7 @@ class _WifiSetupPageState extends State<WifiSetupPage> {
     await prefs.setString('wifi_password', password);
   }
 
-  void _sendBTCommand(String command) async {
+  void _sendBTCommand(String command) {
     if (!_btManager.isConnected.value) {
       ScaffoldMessenger.of(
         context,
@@ -47,8 +49,8 @@ class _WifiSetupPageState extends State<WifiSetupPage> {
   }
 
   void _handleSubmit() async {
-    String ssid = _ssidController.text.trim();
-    String password = _passwordController.text.trim();
+    final String ssid = _ssidController.text.trim();
+    final String password = _passwordController.text.trim();
 
     if (ssid.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -195,6 +197,13 @@ class _WifiSetupPageState extends State<WifiSetupPage> {
     );
   }
 
+  @override
+  void dispose() {
+    _ssidController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Widget _buildInputLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
@@ -222,7 +231,7 @@ class _WifiSetupPageState extends State<WifiSetupPage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

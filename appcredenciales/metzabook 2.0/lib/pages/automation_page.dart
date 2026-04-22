@@ -61,13 +61,8 @@ class _AutomationPageState extends State<AutomationPage> {
     _loadLabels();
     _btDataSub = _btManager.deviceDataStream.listen(_handleIncomingData);
     _btManager.isGlobalAuto.addListener(_onStateChanged);
-<<<<<<< HEAD
-=======
-    _btManager.channelNames.addListener(
-      _onNamesChanged,
-    ); // Escuchar cambios de nombre
+    _btManager.channelNames.addListener(_onNamesChanged);
 
->>>>>>> 5c92128 (Initial commit)
     if (_btManager.isConnected.value) {
       _syncFromDevice();
     }
@@ -83,13 +78,13 @@ class _AutomationPageState extends State<AutomationPage> {
       // FORMATO: LSCHED:CH:IDX:MASK:ON_H:ON_M:OFF_H:OFF_M
       final parts = line.split(':');
       if (parts.length == 8) {
-        int ch = int.tryParse(parts[1]) ?? 0;
-        int idx = int.tryParse(parts[2]) ?? 0;
-        int mask = int.tryParse(parts[3]) ?? 0;
-        int onH = int.tryParse(parts[4]) ?? 0;
-        int onM = int.tryParse(parts[5]) ?? 0;
-        int offH = int.tryParse(parts[6]) ?? 0;
-        int offM = int.tryParse(parts[7]) ?? 0;
+        final int ch = int.tryParse(parts[1]) ?? 0;
+        final int idx = int.tryParse(parts[2]) ?? 0;
+        final int mask = int.tryParse(parts[3]) ?? 0;
+        final int onH = int.tryParse(parts[4]) ?? 0;
+        final int onM = int.tryParse(parts[5]) ?? 0;
+        final int offH = int.tryParse(parts[6]) ?? 0;
+        final int offM = int.tryParse(parts[7]) ?? 0;
 
         if (ch >= 1 && ch <= 4) {
           final onTime = TimeOfDay(hour: onH, minute: onM);
@@ -112,28 +107,23 @@ class _AutomationPageState extends State<AutomationPage> {
           _saveLocalScheds(i + 1);
         }
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Sincronización completa")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Sincronización completa")),
+        );
+      }
     }
   }
 
   Future<void> _loadLabels() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-<<<<<<< HEAD
-      _labels[0] = prefs.getString('foco1_label') ?? 'Foco 1';
-      _labels[1] = prefs.getString('foco2_label') ?? 'Foco 2';
-      _labels[2] = prefs.getString('foco3_label') ?? 'Foco 3';
-      _labels[3] = prefs.getString('foco4_label') ?? 'Foco 4';
-=======
-      // Usar nombres centralizados
       _labels = List.from(_btManager.channelNames.value);
->>>>>>> 5c92128 (Initial commit)
 
       // Load saved schedules from local storage
       for (int i = 0; i < 4; i++) {
-        List<String>? saved = prefs.getStringList('ch${i + 1}_scheds');
+        final List<String>? saved = prefs.getStringList('ch${i + 1}_scheds');
         if (saved != null) {
           _channelSchedules[i] = saved
               .map(
@@ -153,8 +143,7 @@ class _AutomationPageState extends State<AutomationPage> {
 
   Future<void> _saveLocalScheds(int ch) async {
     final prefs = await SharedPreferences.getInstance();
-    // Simplified serialization for demo
-    List<String> data = _channelSchedules[ch - 1]
+    final List<String> data = _channelSchedules[ch - 1]
         .map((s) => 'idx=${s.index}&range=${s.timeRange}&mask=${s.mask}')
         .toList();
     await prefs.setStringList('ch${ch}_scheds', data);
@@ -171,13 +160,13 @@ class _AutomationPageState extends State<AutomationPage> {
   }
 
   void _syncTime() {
-    DateTime now = DateTime.now();
-    String h = now.hour.toString().padLeft(2, '0');
-    String m = now.minute.toString().padLeft(2, '0');
-    String s = now.second.toString().padLeft(2, '0');
-    String d = now.day.toString().padLeft(2, '0');
-    String mo = now.month.toString().padLeft(2, '0');
-    String y = now.year.toString();
+    final DateTime now = DateTime.now();
+    final String h = now.hour.toString().padLeft(2, '0');
+    final String m = now.minute.toString().padLeft(2, '0');
+    final String s = now.second.toString().padLeft(2, '0');
+    final String d = now.day.toString().padLeft(2, '0');
+    final String mo = now.month.toString().padLeft(2, '0');
+    final String y = now.year.toString();
     _sendBTCommand("SETTIME:$h:$m:$s:$d:$mo:$y");
     ScaffoldMessenger.of(
       context,
@@ -192,25 +181,25 @@ class _AutomationPageState extends State<AutomationPage> {
       return;
     }
 
-    TimeOfDay? onTime = await showTimePicker(
+    final TimeOfDay? onTime = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 8, minute: 0),
       helpText: "Encendido para $label",
     );
-    if (onTime == null) return;
+    if (!mounted || onTime == null) return;
 
-    TimeOfDay? offTime = await showTimePicker(
+    final TimeOfDay? offTime = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 18, minute: 0),
       helpText: "Apagado para $label",
     );
-    if (offTime == null) return;
+    if (!mounted || offTime == null) return;
 
     // Selector de Días
-    int? mask = await showDialog<int>(
+    final int? mask = await showDialog<int>(
       context: context,
       builder: (context) {
-        List<int> tempSelected = [1, 2, 3, 4, 5];
+        final List<int> tempSelected = [1, 2, 3, 4, 5];
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -241,7 +230,9 @@ class _AutomationPageState extends State<AutomationPage> {
                 ElevatedButton(
                   onPressed: () {
                     int m = 0;
-                    for (int d in tempSelected) m |= (1 << d);
+                    for (final int d in tempSelected) {
+                      m |= (1 << d);
+                    }
                     Navigator.pop(context, m);
                   },
                   child: const Text("Agregar"),
@@ -253,14 +244,16 @@ class _AutomationPageState extends State<AutomationPage> {
       },
     );
 
-    if (mask == null || mask == 0) return;
+    if (mask == null || mask == 0 || !mounted) return;
 
     // Find first available local index slot
     int newIdx = 0;
-    List<int> usedIdx = _channelSchedules[channel - 1]
+    final List<int> usedIdx = _channelSchedules[channel - 1]
         .map((e) => e.index)
         .toList();
-    while (usedIdx.contains(newIdx)) newIdx++;
+    while (usedIdx.contains(newIdx)) {
+      newIdx++;
+    }
 
     if (newIdx >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -270,7 +263,7 @@ class _AutomationPageState extends State<AutomationPage> {
     }
 
     // Protocol: SETSCHED:CH:IDX:MASK:ON_H:ON_M:OFF_H:OFF_M
-    String cmd =
+    final String cmd =
         "SETSCHED:$channel:$newIdx:$mask:${onTime.hour}:${onTime.minute}:${offTime.hour}:${offTime.minute}";
     _sendBTCommand(cmd);
 
@@ -283,25 +276,27 @@ class _AutomationPageState extends State<AutomationPage> {
         ),
       );
     });
-    _saveLocalScheds(channel);
+    unawaited(_saveLocalScheds(channel));
   }
 
   String _getMaskString(int mask) {
     if (mask == 127) return "Todos los días";
-    List<String> activeDays = [];
+    final List<String> activeDays = [];
     for (int i = 0; i < 7; i++) {
-      if ((mask & (1 << i)) != 0) activeDays.add(_dayNames[i].substring(0, 3));
+      if ((mask & (1 << i)) != 0) {
+        activeDays.add(_dayNames[i].substring(0, 3));
+      }
     }
     return activeDays.join(", ");
   }
 
   void _removeSchedule(int channel, int listIdx) {
-    int btIdx = _channelSchedules[channel - 1][listIdx].index;
+    final int btIdx = _channelSchedules[channel - 1][listIdx].index;
     _sendBTCommand("DIS_SCHED:$channel:$btIdx");
     setState(() {
       _channelSchedules[channel - 1].removeAt(listIdx);
     });
-    _saveLocalScheds(channel);
+    unawaited(_saveLocalScheds(channel));
   }
 
   void _clearAllSchedules(int channel) {
@@ -309,11 +304,9 @@ class _AutomationPageState extends State<AutomationPage> {
     setState(() {
       _channelSchedules[channel - 1].clear();
     });
-    _saveLocalScheds(channel);
+    unawaited(_saveLocalScheds(channel));
   }
 
-<<<<<<< HEAD
-=======
   void _onNamesChanged() {
     if (mounted) {
       setState(() {
@@ -322,22 +315,19 @@ class _AutomationPageState extends State<AutomationPage> {
     }
   }
 
->>>>>>> 5c92128 (Initial commit)
   @override
   void dispose() {
-    _btDataSub?.cancel();
+    unawaited(_btDataSub?.cancel());
     _btManager.isGlobalAuto.removeListener(_onStateChanged);
-<<<<<<< HEAD
-=======
     _btManager.channelNames.removeListener(_onNamesChanged);
->>>>>>> 5c92128 (Initial commit)
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    bool connected = _btManager.isConnected.value;
-    bool isAuto = _btManager.isGlobalAuto.value;
+    final bool connected = _btManager.isConnected.value;
+    final bool isAuto = _btManager.isGlobalAuto.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -419,9 +409,9 @@ class _AutomationPageState extends State<AutomationPage> {
                 ),
                 itemCount: 4,
                 itemBuilder: (context, index) {
-                  int ch = index + 1;
-                  String label = _labels[index];
-                  List<SchedInterval> scheds = _channelSchedules[index];
+                  final int ch = index + 1;
+                  final String label = _labels[index];
+                  final List<SchedInterval> scheds = _channelSchedules[index];
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -481,8 +471,8 @@ class _AutomationPageState extends State<AutomationPage> {
                       ),
                       children: [
                         ...scheds.asMap().entries.map((entry) {
-                          int listIdx = entry.key;
-                          SchedInterval interval = entry.value;
+                          final int listIdx = entry.key;
+                          final SchedInterval interval = entry.value;
                           return ListTile(
                             dense: true,
                             title: Text(
@@ -500,7 +490,7 @@ class _AutomationPageState extends State<AutomationPage> {
                               onPressed: () => _removeSchedule(ch, listIdx),
                             ),
                           );
-                        }).toList(),
+                        }),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(

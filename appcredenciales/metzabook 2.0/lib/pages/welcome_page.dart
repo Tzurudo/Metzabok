@@ -81,7 +81,7 @@ class _WelcomePageState extends State<WelcomePage>
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: premiumGold.withOpacity(0.4),
+                              color: premiumGold.withValues(alpha: 0.4),
                               blurRadius: 24,
                               spreadRadius: 2,
                             ),
@@ -178,7 +178,7 @@ class _WelcomePageState extends State<WelcomePage>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: premiumGold.withOpacity(0.5),
+                              color: premiumGold.withValues(alpha: 0.5),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
